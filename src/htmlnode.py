@@ -1,5 +1,3 @@
-
-
 class HTMLNode:
 
     def __init__(self, tag=None, value=None, children=None, props=None):
@@ -61,6 +59,3 @@ class ParentNode(HTMLNode):
         for child in self.children:
             value += child.to_html()
         return f"<{self.tag}{self.props_to_html()}>{value}</{self.tag}>"
-
-
-
