@@ -48,7 +48,7 @@ class TestHTMLNode(unittest.TestCase):
         new_html_node = HTMLNode(
             "h1", "HTMLNode ", child_html_node, {"href": "https://link.in"}
         )
-        self.assertEqual(new_html_node.props_to_html(), ' href="https://link.in"')
+        self.assertEqual(new_html_node.props_to_html(), " href='https://link.in'")
 
 
 class TestLeafNode(unittest.TestCase):

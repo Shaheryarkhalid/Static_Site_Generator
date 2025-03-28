@@ -15,7 +15,7 @@ class HTMLNode:
             return ""
         html_text = ""
         for key, value in self.props.items():
-            html_text += f' {key}="{value}"'
+            html_text += f" {key}='{value}'"
         return html_text
 
     def __eq__(self, htmlnode):
@@ -38,7 +38,7 @@ class LeafNode(HTMLNode):
         super().__init__(tag=tag, value=value, props=props)
 
     def to_html(self):
-        if not self.value:
+        if not self.value and not self.tag == "img":
             raise ValueError
         if not self.tag:
             return str(self.value)

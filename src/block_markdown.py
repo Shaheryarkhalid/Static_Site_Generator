@@ -1,8 +1,8 @@
-from enum import Enum
 import re
-from htmlnode import HTMLNode, LeafNode, ParentNode
+from enum import Enum
+from htmlnode import LeafNode, ParentNode
 from inline_markdown import text_to_textnodes
-from textnode import TextNode, TextType, text_node_to_html_node
+from textnode import TextNode, text_node_to_html_node
 
 
 class BlockType(Enum):
@@ -14,13 +14,12 @@ class BlockType(Enum):
     OLIST = "olist"
 
 
-##################################################################
-
-
 def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
     html_nodes = []
     for block in blocks:
+        if not block or block in ("",):
+            continue
         html_nodes.append(
             text_node_to_parent_html_node(TextNode(block, block_to_block_type(block)))
         )
@@ -28,38 +27,61 @@ def markdown_to_html_node(markdown):
 
 
 def text_node_to_parent_html_node(text_node):
+
     match text_node.text_type:
-        case TextType.PARAGRAPH:
-            return ParentNode("p", children=text_to_leaf_html_nodes(text_node.text))
-        case TextType.CODE:
+        case BlockType.PARAGRAPH:
+            return ParentNode(
+                "p", children=text_to_leaf_html_nodes(text_node.text.replace("\n", " "))
+            )
+        case BlockType.CODE:
+            text_node.text = text_node.text.replace("```", "")
             return ParentNode(
                 "code",
-                children=text_to_leaf_html_nodes(text_node.text.replace("```", "")),
+                children=text_to_leaf_html_nodes(text_node.text.replace("\n", " ")),
             )
-        case TextType.HEADING:
+        case BlockType.QUOTES:
+            text_node.text = text_node.text.replace("> ", "")
             return ParentNode(
-                f"h{len(re.findall(r"^\#*\ ",text_node.text)[0])}",
+                "blockquote",
+                children=text_to_leaf_html_nodes(text_node.text.replace("\n", " ")),
+            )
+
+        case BlockType.HEADING:
+            length_of_heading_markers = (
+                len(re.findall(r"^\#*\ ", text_node.text)[0]) - 1
+            )
+            return ParentNode(
+                f"h{ length_of_heading_markers  if  length_of_heading_markers<=6 else  6}",
                 children=text_to_leaf_html_nodes(
-                    text_node.text.replace(re.findall(r"^\#*\ ", text_node.text)[0], "")
+                    text_node.text.replace(
+                        re.findall(r"^\#*\ ", text_node.text)[0], ""
+                    ).replace("\n", " ")
                 ),
             )
-        case TextType.ULIST:
-            splited_list_text = text_node.text.split("\n")
-            children = []
-            for list_text in splited_list_text:
-                children.append(LeafNode("li", value=list_text.replace("- ", "")))
-            return ParentNode("ul", children=children)
-        case TextType.OLIST:
+        case BlockType.ULIST:
             splited_list_text = text_node.text.split("\n")
             children = []
             for list_text in splited_list_text:
                 children.append(
-                    LeafNode(
+                    ParentNode(
                         "li",
-                        value=re.sub(
-                            r"^\d*\.\ ",
-                            "",
-                            list_text,
+                        children=text_to_leaf_html_nodes(list_text.replace("- ", "")),
+                    )
+                )
+            return ParentNode("ul", children=children)
+        case BlockType.OLIST:
+            splited_list_text = text_node.text.split("\n")
+            children = []
+            for list_text in splited_list_text:
+                children.append(
+                    ParentNode(
+                        "li",
+                        children=text_to_leaf_html_nodes(
+                            re.sub(
+                                r"^\d*\.\ ",
+                                "",
+                                list_text,
+                            ),
                         ),
                     )
                 )
@@ -68,11 +90,8 @@ def text_node_to_parent_html_node(text_node):
         case _:
             return ParentNode(
                 "p",
-                children=text_to_leaf_html_nodes(text_node.text),
+                children=text_to_leaf_html_nodes(text_node.text.replace("\n", " ")),
             )
-
-
-###############################################################
 
 
 def text_to_leaf_html_nodes(text):
