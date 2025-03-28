@@ -1,4 +1,5 @@
 import os
+import sys
 from os.path import isdir
 import shutil
 
@@ -34,7 +35,7 @@ def extract_title(markdown):
     raise Exception("Markdown file does not contain any headers.")
 
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(base_path, from_path, template_path, dest_path):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     markdown_file = open(from_path, "r").read()
     template_file = open(template_path, "r").read()
@@ -43,6 +44,9 @@ def generate_page(from_path, template_path, dest_path):
     new_Html_page = template_file.replace("{{ Title }}", page_title).replace(
         "{{ Content }}", HTML_string
     )
+    new_Html_page.replace("href='/", f"href='{base_path}").replace(
+        "src='/", f"src='{base_path}"
+    )
     for directory in dest_path.split(os.sep):
         path = ""
         if directory and not os.path.exists(directory) and not directory.split(".")[0]:
@@ -50,7 +54,7 @@ def generate_page(from_path, template_path, dest_path):
     open(".".join(dest_path.split(".")[:-1] + ["html"]), "w").write(new_Html_page)
 
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(base_path, dir_path_content, template_path, dest_dir_path):
     for content in os.listdir(dir_path_content):
         dir_content_path = os.path.join(dir_path_content, content)
         dest_content_dir_path = os.path.join(dest_dir_path, content)
@@ -58,20 +62,27 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
             not os.path.isdir(dir_content_path)
             and dir_content_path.split(".")[-1] == "md"
         ):
-            generate_page(dir_content_path, template_path, dest_content_dir_path)
+            generate_page(
+                base_path, dir_content_path, template_path, dest_content_dir_path
+            )
         if os.path.isdir(dir_content_path):
             os.mkdir(dest_content_dir_path)
             generate_pages_recursive(
-                dir_content_path, template_path, dest_content_dir_path
+                base_path, dir_content_path, template_path, dest_content_dir_path
             )
 
 
 def main():
-    base_path = os.path.join(
+    base_path = ""
+    if len(sys.argv) > 1:
+        base_path = sys.argv[1]
+    else:
+        base_path = "/"
+    base_path_start = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "..",
     )
-    public_dir_path = os.path.join(base_path, "public")
+    public_dir_path = os.path.join(base_path_start, "docs")
     if not os.path.exists(public_dir_path):
         os.mkdir(public_dir_path)
     else:
@@ -82,12 +93,13 @@ def main():
                 continue
             os.remove(content_path)
     copy_files_form_source_to_destination(
-        os.path.join(base_path, "static"), public_dir_path
+        os.path.join(base_path_start, "static"), public_dir_path
     )
     generate_pages_recursive(
-        os.path.join(base_path, "content"),
-        os.path.join(base_path, "template.html"),
-        os.path.join(base_path, "public"),
+        base_path,
+        os.path.join(base_path_start, "content"),
+        os.path.join(base_path_start, "template.html"),
+        os.path.join(base_path_start, "docs"),
     )
 
 
