@@ -6,6 +6,7 @@ import shutil
 from block_markdown import markdown_to_html_node
 
 
+
 def copy_files_form_source_to_destination(source, destination):
     if os.path.exists(destination):
         destination_content = os.listdir(destination)
