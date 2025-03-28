@@ -6,7 +6,6 @@ import shutil
 from block_markdown import markdown_to_html_node
 
 
-
 def copy_files_form_source_to_destination(source, destination):
     if os.path.exists(destination):
         destination_content = os.listdir(destination)
@@ -45,7 +44,7 @@ def generate_page(base_path, from_path, template_path, dest_path):
     new_Html_page = template_file.replace("{{ Title }}", page_title).replace(
         "{{ Content }}", HTML_string
     )
-    new_Html_page.replace("href='/", f"href='{base_path}").replace(
+    new_Html_page = new_Html_page.replace("href='/", f"href='{base_path}").replace(
         "src='/", f"src='{base_path}"
     )
     for directory in dest_path.split(os.sep):
